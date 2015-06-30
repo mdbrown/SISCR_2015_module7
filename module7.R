@@ -204,6 +204,24 @@ depresslsort$groupvisit=with(depresslsort,(as.numeric(group)-1)*as.numeric(visit
 m4=geeglm(dep~group+visit+groupvisit, id=subj, data=depresslsort, corstr="ar1")
 deltaMethod(coef(m4),"visit+groupvisit",vcov.=summary(m4)$cov.scaled)
 
+### evaluate whether dropout depends on depression levels
+library(plyr)
+library(ggplot2)
+
+depresslong <- ddply(depresslong, .(subj), mutate, 
+              maxtime = max(visit[!is.na(dep)]))
+
+ggplot(aes(x=visit, y=dep), data=depresslong) +
+  geom_point(aes(x=visit, y=dep)) +
+  geom_smooth(aes(x=visit, y=dep, group=maxtime), se=FALSE) +
+  theme_bw()
+
+### fix mixed models which have weaker assumptions about missing data
+summary(lmer(dep ~ (1|subj) + visit + factor(group), 
+             data=depresslong))
+summary(lmer(dep ~ (visit | subj) + visit*factor(group), 
+             data=depresslong))
+
 
 
 
